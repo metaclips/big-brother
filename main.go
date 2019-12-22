@@ -41,7 +41,7 @@ func init() {
 	defer func() {
 		Db.Close()
 	}()
-	
+
 	if err != nil {
 		log.Fatalln("Could not start db err: ", err.Error())
 	}
