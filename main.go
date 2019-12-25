@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/asdine/storm"
+	"github.com/julienschmidt/httprouter"
 )
 
 // todo: get switch name.
@@ -38,9 +39,6 @@ var err error
 
 func init() {
 	Db, err = storm.Open("log.db")
-	defer func() {
-		Db.Close()
-	}()
 
 	if err != nil {
 		log.Fatalln("Could not start db err: ", err.Error())
@@ -193,21 +191,24 @@ func main() {
 		}
 	}()
 
-	http.HandleFunc("/query", querySwitches)
-	http.HandleFunc("/all", queryLogs)
-	fmt.Println(http.ListenAndServe(":80", nil))
+	router := httprouter.New()
+	router.POST("/signin", signIn)
+	router.GET("/query", querySwitches)
+	router.GET("/all", queryLogs)
+	fmt.Println(http.ListenAndServe(":3000", router))
 }
 
-func querySwitches(w http.ResponseWriter, r *http.Request) {
+func querySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	data, err := json.MarshalIndent(Servers, "", "\t")
 	if err != nil {
 		w.Write([]byte(fmt.Sprintf("server error: %s", err.Error())))
 		return
 	}
+
 	w.Write(data)
 }
 
-func queryLogs(w http.ResponseWriter, r *http.Request) {
+func queryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var data []DownTimeLogger
 	fmt.Println(Db.Find("Date", time.Now().Format("2006-01-02"), &data))
 	jsonData, err := json.MarshalIndent(data, "", "\t")
@@ -215,4 +216,12 @@ func queryLogs(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 	fmt.Println(w.Write(jsonData))
+}
+
+func signIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	r.ParseForm()
+
+	username := r.FormValue("username")
+	pass := r.FormValue("password")
+	fmt.Println(username, pass)
 }
