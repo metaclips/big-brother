@@ -2,19 +2,15 @@
   <v-app>
     <v-content justify="center">
       <img alt="Vue logo" src="./assets/logo.jpg" />
-      <SignIn />
+      <router-view></router-view>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import SignIn from "./components/SignIn.vue";
-
 export default {
   name: "app",
-  components: {
-    SignIn
-  }
+  components: {}
 };
 </script>
 
