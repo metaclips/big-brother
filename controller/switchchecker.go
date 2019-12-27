@@ -7,15 +7,28 @@ import (
 	"sync"
 	"time"
 
+	"github.com/asdine/storm/q"
+
 	"github.com/metaclips/big-brother/model"
 )
 
 var alarmOn bool
 var servers = make(map[string]model.NetworkInfo)
 var syncWg sync.WaitGroup
-var downtime = make(map[string]model.DownTimeLogger)
 
-func localAddresses() {
+func MonitorSwitches() {
+	addToSyncWaitGroup := func() {
+		syncWg.Add(1)
+		fmt.Println("About to")
+
+		if !alarmOn {
+			// call alarm off blocking alarm only if not on
+			go blockingAlarm()
+			fmt.Println("Alarm on")
+			alarmOn = true
+		}
+	}
+
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return
@@ -23,12 +36,15 @@ func localAddresses() {
 
 	// remove old data from map, if a server was unplugged
 	var iServers = make(map[string]model.NetworkInfo)
+	var downServerMacAddress []string
 	for _, i := range ifaces {
-		if !servers[i.HardwareAddr.String()].Last_Time_Up.IsZero() {
+		if servers[i.HardwareAddr.String()].LastTimeUp != "" {
 			iServers[i.HardwareAddr.String()] = servers[i.HardwareAddr.String()]
+			if iServers[i.HardwareAddr.String()].Up == false {
+				downServerMacAddress = append(downServerMacAddress, i.HardwareAddr.String())
+			}
 		}
 	}
-
 	servers = iServers
 
 	for _, i := range ifaces {
@@ -72,38 +88,16 @@ func localAddresses() {
 				Timeout:   5 * time.Second, // timeout at 5sec, most times network could be down
 			}
 
-			addToSyncWaitGroup := func() {
-				syncWg.Add(1)
-				fmt.Println("About to")
-
-				if !alarmOn {
-					// call alarm off blocking alarm only if not on
-					go blockingAlarm()
-					fmt.Println("Alarm on")
-					alarmOn = true
-				}
-			}
-
 			// This basically checks if the network is up, if down Add to sync
 			// if initially down and network comes up, remove from sync group.
 			conn, err := d.Dial("tcp", "google.com:80")
 			if err != nil {
-				// if network isn't registered
-				if servers[i.HardwareAddr.String()].Last_Time_Up.IsZero() {
+				// if network isn't registered or if network was recently up and internet isn't available
+				if servers[i.HardwareAddr.String()].LastTimeDown == "" || servers[i.HardwareAddr.String()].Up == true {
 					servers[i.HardwareAddr.String()] = model.NetworkInfo{
 						Up:           false,
-						Last_Time_Up: time.Now(),
+						LastTimeDown: time.Now().Format(time.Kitchen),
 					}
-
-					addToSyncWaitGroup()
-				}
-
-				// add to a sync waitgroup if network was recently up and internet isn't available
-				// todo, create a logger that logs timeup and timedown
-				if servers[i.HardwareAddr.String()].Up == true {
-					iServer := servers[i.HardwareAddr.String()]
-					iServer.Up = false
-					servers[i.HardwareAddr.String()] = iServer
 
 					addToSyncWaitGroup()
 				}
@@ -112,32 +106,44 @@ func localAddresses() {
 			} else {
 
 				// check if network is registered or was initially down
-				if servers[i.HardwareAddr.String()].Last_Time_Up.IsZero() { //if network isn't registered
-					servers[i.HardwareAddr.String()] = model.NetworkInfo{Up: true}
-				}
-
-				if servers[i.HardwareAddr.String()].Up == false {
-					syncWg.Done()
-					fmt.Println("Done one")
-
-					iServer := servers[i.HardwareAddr.String()]
-					iServer.Up = true
-					servers[i.HardwareAddr.String()] = iServer
-
-					// log to db
-					downtime[i.HardwareAddr.String()] = model.DownTimeLogger{
-						Date:        time.Now().Format("2006-01-02"),
-						MacAddress:  i.HardwareAddr.String(),
-						NetworkInfo: servers[i.HardwareAddr.String()],
-						// Downtimes:  append(downtime[i.HardwareAddr.String()].Downtimes, Servers[i.HardwareAddr.String()].Last_Time_Up+" - "+time.Now().Format("Mon Jan 2 15:04:05")),
+				if servers[i.HardwareAddr.String()].LastTimeUp == "" || servers[i.HardwareAddr.String()].Up == false { //if network isn't registered
+					servers[i.HardwareAddr.String()] = model.NetworkInfo{
+						Up:         true,
+						LastTimeUp: time.Now().Format(time.Kitchen),
 					}
 
-					iServer.Last_Time_Up = time.Now()
-					servers[i.HardwareAddr.String()] = iServer
+					if servers[i.HardwareAddr.String()].Up == false {
+						syncWg.Done()
+					}
 
-					data := downtime[i.HardwareAddr.String()]
-					if err := model.Db.Update(&data); err != nil {
-						fmt.Println(model.Db.Save(&data))
+					fmt.Println("Done one")
+
+					// check if a recent uptime was saved in database
+					var user model.DownTimeLogger
+
+					checkRecentDownTime := model.Db.Select(
+						q.And(
+							q.Eq("Date", time.Now().Format("2006-01-02")),
+							q.Eq("LastTimeDown", time.Now().Format(time.Kitchen)),
+						),
+					)
+
+					err := checkRecentDownTime.First(&user)
+					if err != nil {
+
+						// only log to db when server switches from down-up or up-down state
+						user = model.DownTimeLogger{
+							Date:        time.Now().Format("2006-01-02"),
+							NetworkInfo: servers[i.HardwareAddr.String()],
+						}
+						user.MacAddress = append(user.MacAddress, i.HardwareAddr.String())
+
+					} else {
+						user.MacAddress = append(user.MacAddress, i.HardwareAddr.String())
+					}
+
+					if err := model.Db.Update(&user); err != nil {
+						fmt.Println(model.Db.Save(&user))
 						fmt.Println("There was an err")
 					}
 				}
