@@ -1,11 +1,11 @@
 <template>
-  <v-form v-model="valid" method="POST" action="http://127.0.0.1:3000/signin">
+  <v-form>
     <v-row justify="center">
       <v-col cols="4">
         <v-text-field
           v-model="name"
           :rules="nameRules"
-          name="username"
+          id="username"
           placeholder="Username"
           required
         ></v-text-field>
@@ -16,7 +16,7 @@
           :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
           :rules="[rules.required, rules.min]"
           :type="show1 ? 'text' : 'password'"
-          name="password"
+          id="password"
           counter
           @click:append="show1 = !show1"
         ></v-text-field>
@@ -39,7 +39,7 @@ export default {
     info: null,
     wrongDetails: false,
     buttonDisabled: false,
-    valid: true,
+    //valid: true,
     name: "",
     nameRules: [v => !!v || "Name is required"],
     email: "",
@@ -69,33 +69,41 @@ export default {
     },
     attemptLogin() {
       this.buttonDisabled = true;
-      var login_data = {
-        username: this.name,
-        password: this.password
-      };
 
-      axios.post("http://127.0.0.1:3000/signin", login_data).then(
-        response => {
-          // eslint-disable-next-line no-console
-          console.log(response.statusText);
-          if (response.status == 200) {
-            this.wrongDetails = false;
+      var bodyFormData = new FormData();
+      bodyFormData.append("password", this.password);
+      bodyFormData.append("username", this.name);
+      var querystring = require("querystring");
+
+      axios
+        .post(
+          "http://127.0.0.1:3000/signin",
+          querystring.stringify({
+            username: this.name,
+            password: this.password
+          }),
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            }
           }
-        },
-        error => {
-          if (error.response.status == 422) {
-            this.buttonDisabled = false;
-            this.wrongDetails = true;
+        )
+        .then(
+          response => {
+            // eslint-disable-next-line no-console
+            console.log(response.statusText);
+            if (response.status == 200) {
+              this.wrongDetails = false;
+            }
+          },
+          error => {
+            if (error.response.status == 422) {
+              this.buttonDisabled = false;
+              this.wrongDetails = true;
+            }
           }
-        }
-      );
+        );
     }
   }
-
-  // mounted() {
-  //   axios
-  //     .get("https://api.coindesk.com/v1/bpi/currentprice.json")
-  //     .then(response => (this.info = response));
-  // }
 };
 </script>

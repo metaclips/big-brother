@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -28,10 +27,10 @@ func main() {
 	router := httprouter.New()
 
 	router.POST("/signin", controller.SignIn)
-
 	router.GET("/query", controller.QuerySwitches)
 	router.GET("/all", controller.QueryLogs)
+
 	handler := cors.Default().Handler(router)
 
-	fmt.Println(http.ListenAndServe(":3000", handler))
+	http.ListenAndServe(":3000", handler)
 }

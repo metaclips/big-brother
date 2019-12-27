@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/asdine/storm"
@@ -53,6 +54,9 @@ func init() {
 			log.Fatalln("Could not save default admin password to db", err)
 		}
 	}
+	var rr []User
+	fmt.Println(Db.All(&rr))
+	fmt.Println(rr)
 }
 
 func database() {

@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/metaclips/big-brother/model"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	key    = "Hello there Unilag"
+	host   = "http://127.0.0.1:8080"
 	expire = 259200
 )
 
@@ -33,6 +33,12 @@ func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := decodeCookie(r, w)
+	if err != nil {
+		http.Redirect(w, r, host+"/signin", http.StatusTemporaryRedirect)
+		return
+	}
+
 	data, err := json.MarshalIndent(servers, "", "\t")
 	if err != nil {
 		w.Write([]byte(fmt.Sprintf("server error: %s", err.Error())))
@@ -43,7 +49,8 @@ func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	r.ParseForm()
+	fmt.Println(r.ParseForm())
+
 	username := r.FormValue("username")
 	pass := r.FormValue("password")
 
@@ -55,14 +62,12 @@ func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(pass)); err != nil {
-		// tell users login is false
-		// http.Redirect(w, r, "http://127.0.0.1:8080/signin", http.StatusMovedPermanently)
 		w.WriteHeader(422)
 		return
 	}
 
-	fmt.Println(username, pass)
-	json.NewEncoder(w).Encode("OKOK")
+	createCookie(username, w, r)
+	http.Redirect(w, r, host, 301)
 }
 
 func createCookie(email string, w http.ResponseWriter, r *http.Request) {
@@ -70,12 +75,11 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) {
 	claims := make(jwt.MapClaims)
 	claims["email"] = email
 	claims["exp"] = time.Now().Add(time.Minute * 30)
-	claims["gen"] = "Test" //change this later
 	token.Claims = claims
 
 	key, err := token.SignedString([]byte(key))
 	if err != nil {
-		http.Redirect(w, r, ":8080/signin", 302)
+		http.Redirect(w, r, host+"/signin", 301)
 		return
 	}
 
@@ -89,4 +93,21 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	fmt.Println("token err", err)
+}
+
+func decodeCookie(r *http.Request, w http.ResponseWriter) error {
+	//Get cookie
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		return err
+	}
+
+	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
+		return []byte(key), nil
+	})
+	if err == nil && token.Valid {
+		return nil
+	}
+
+	return err
 }
