@@ -24,6 +24,9 @@
         <v-alert v-if="wrongDetails" dense outlined type="error">
           <strong>Invalid login credential, please try again.</strong>
         </v-alert>
+        <v-alert v-if="internalError" dense outlined type="error">
+          <strong>Internal error</strong>
+        </v-alert>
       </v-col>
     </v-row>
 
@@ -38,6 +41,7 @@ export default {
   data: () => ({
     info: null,
     wrongDetails: false,
+    internalError: false,
     buttonDisabled: false,
     //valid: true,
     name: "",
@@ -68,6 +72,8 @@ export default {
       this.$refs.form.resetValidation();
     },
     attemptLogin() {
+      // eslint-disable-next-line no-console
+      console.log("rrrrr");
       this.buttonDisabled = true;
 
       var bodyFormData = new FormData();
@@ -94,16 +100,32 @@ export default {
             console.log(response.statusText);
             if (response.status == 200) {
               this.wrongDetails = false;
+              this.$router.push("/");
             }
           },
           error => {
             if (error.response.status == 422) {
               this.buttonDisabled = false;
               this.wrongDetails = true;
+            } else {
+              this.internalError = true;
+              this.wrongDetails = false;
             }
           }
         );
     }
+  },
+
+  mounted() {
+    axios.post("http://127.0.0.1:3000/islogged").then(response => {
+      // eslint-disable-next-line no-console
+      console.log("Trying to check log in");
+      if (response.status == 200) {
+        // eslint-disable-next-line no-console
+        console.log("Trying log in");
+        this.$router.push("/");
+      }
+    });
   }
 };
 </script>

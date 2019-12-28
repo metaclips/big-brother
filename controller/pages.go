@@ -17,7 +17,7 @@ import (
 const (
 	key    = "Hello there Unilag"
 	host   = "http://127.0.0.1:8080"
-	expire = 259200
+	expire = 30
 )
 
 func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -33,9 +33,12 @@ func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	//fmt.Println(w.Header().Get("Access-Control-Allow-Origin")) //, "*")
+	//r.Header.Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
 	err := decodeCookie(r, w)
 	if err != nil {
-		http.Redirect(w, r, host+"/signin", http.StatusTemporaryRedirect)
+		w.WriteHeader(425)
 		return
 	}
 
@@ -49,7 +52,7 @@ func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Println(r.ParseForm())
+	r.ParseForm()
 
 	username := r.FormValue("username")
 	pass := r.FormValue("password")
@@ -66,33 +69,55 @@ func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	createCookie(username, w, r)
-	http.Redirect(w, r, host, 301)
+	err = createCookie(username, w, r)
+	if err != nil {
+		w.WriteHeader(425)
+		return
+	}
+
+	w.WriteHeader(200)
 }
 
-func createCookie(email string, w http.ResponseWriter, r *http.Request) {
+func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := decodeCookie(r, w)
+	if err == nil {
+		w.WriteHeader(200)
+	} else {
+		w.WriteHeader(425)
+	}
+}
+
+func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	http.SetCookie(
+		w,
+		&http.Cookie{
+			Value:  "token",
+			MaxAge: 0})
+
+	w.WriteHeader(301)
+}
+
+func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
 	token := jwt.New(jwt.SigningMethodHS512)
 	claims := make(jwt.MapClaims)
 	claims["email"] = email
 	claims["exp"] = time.Now().Add(time.Minute * 30)
 	token.Claims = claims
 
-	key, err := token.SignedString([]byte(key))
+	uniqueKey, err := token.SignedString([]byte(key))
 	if err != nil {
-		http.Redirect(w, r, host+"/signin", 301)
-		return
+		return err
 	}
 
 	cookie := http.Cookie{
-		Name:     "token",
-		Value:    key,
-		MaxAge:   expire,
-		HttpOnly: true,
-		Path:     "/",
+		Name:    "token",
+		Value:   uniqueKey,
+		Expires: time.Now().Add(time.Minute * expire),
+		Path:    "/",
 	}
 	http.SetCookie(w, &cookie)
 
-	fmt.Println("token err", err)
+	return nil
 }
 
 func decodeCookie(r *http.Request, w http.ResponseWriter) error {

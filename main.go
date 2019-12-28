@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/cors"
+
 	"github.com/metaclips/big-brother/controller"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/rs/cors"
 )
 
 // todo: get switch name.
@@ -27,8 +28,11 @@ func main() {
 	router := httprouter.New()
 
 	router.POST("/signin", controller.SignIn)
+	router.POST("/islogged", controller.IsLogged)
+
 	router.GET("/query", controller.QuerySwitches)
 	router.GET("/all", controller.QueryLogs)
+	router.POST("/logout", controller.Logout)
 
 	handler := cors.Default().Handler(router)
 
