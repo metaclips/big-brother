@@ -16,13 +16,13 @@ import (
 
 const (
 	key    = "Hello there Unilag"
-	host   = "http://127.0.0.1:8080"
+	host   = "https://7c71637e.ngrok.io"
 	expire = 30
 )
 
 func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var data []model.DownTimeLogger
-	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", host)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	fmt.Println(model.Db.Find("Date", time.Now().Format("2006-01-02"), &data))
 
@@ -35,7 +35,7 @@ func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", host)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	err := decodeCookie(r, w)
 	if err != nil {
@@ -53,7 +53,7 @@ func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", host)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	r.ParseForm()
 
@@ -82,7 +82,7 @@ func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", host)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	err := decodeCookie(r, w)
 	if err == nil {
@@ -93,13 +93,13 @@ func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", host)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	http.SetCookie(
 		w,
 		&http.Cookie{
-			Value:  "token",
-			MaxAge: 0})
+			Value:   "token",
+			Expires: time.Now(), MaxAge: -1})
 
 	w.WriteHeader(301)
 }
@@ -117,10 +117,12 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	cookie := http.Cookie{
-		Name:    "token",
-		Value:   uniqueKey,
-		Expires: time.Now().Add(time.Minute * expire),
-		Path:    "/",
+		Name:     "token",
+		Value:    uniqueKey,
+		HttpOnly: true,
+		SameSite: http.SameSiteDefaultMode,
+		Expires:  time.Now().Add(time.Minute * expire),
+		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)
 	cc := r.Cookies()

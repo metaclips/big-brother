@@ -1,5 +1,17 @@
 <template>
-  <v-content justify="center">{{queryData}}</v-content>
+  <v-container>
+    <v-cols>
+      <ul>
+        <li v-for="(item, key) in queryData " :key="key">
+          <p v-if="item.Up==true">{{ key }} - Server Up</p>
+          <p v-else>{{ key }} - Server Down</p>
+        </li>
+      </ul>
+      <h2 class="text-center">
+        <u>Server Logs</u>
+      </h2>
+    </v-cols>
+  </v-container>
 </template>
 
 <script>
@@ -7,7 +19,7 @@ import axios from "axios";
 
 export default {
   data: () => ({
-    queryData: ""
+    queryData: null
   }),
 
   components: {},

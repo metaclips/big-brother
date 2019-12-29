@@ -29,8 +29,11 @@
         </v-alert>
       </v-col>
     </v-row>
-
-    <v-btn outlined v-on:click="attemptLogin" :disabled="buttonDisabled">Sign In</v-btn>
+    <v-row>
+      <v-spacer></v-spacer>
+      <v-btn outlined v-on:click="attemptLogin" :disabled="buttonDisabled">Sign In</v-btn>
+      <v-spacer></v-spacer>
+    </v-row>
   </v-form>
 </template>
 

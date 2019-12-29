@@ -1,7 +1,12 @@
 <template>
   <v-app>
-    <v-content justify="center">
-      <img alt="Vue logo" src="./assets/logo.jpg" />
+    <v-content>
+      <v-row>
+        <v-spacer></v-spacer>
+        <img class="justify-center" alt="UNILAG logo" src="./assets/logo.jpg" />
+        <v-spacer></v-spacer>
+      </v-row>
+
       <router-view></router-view>
     </v-content>
   </v-app>
@@ -13,14 +18,3 @@ export default {
   components: {}
 };
 </script>
-
-<style>
-#app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>

@@ -32,7 +32,7 @@ func main() {
 
 	router.GET("/query", controller.QuerySwitches)
 	router.GET("/all", controller.QueryLogs)
-	router.POST("/logout", controller.Logout)
+	router.GET("/logout", controller.Logout)
 
 	handler := cors.Default().Handler(router)
 
