@@ -22,6 +22,8 @@ const (
 
 func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var data []model.DownTimeLogger
+	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	fmt.Println(model.Db.Find("Date", time.Now().Format("2006-01-02"), &data))
 
 	jsonData, err := json.MarshalIndent(data, "", "\t")
@@ -33,9 +35,8 @@ func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	// w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	//fmt.Println(w.Header().Get("Access-Control-Allow-Origin")) //, "*")
-	//r.Header.Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	err := decodeCookie(r, w)
 	if err != nil {
 		w.WriteHeader(425)
@@ -52,6 +53,8 @@ func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	r.ParseForm()
 
 	username := r.FormValue("username")
@@ -79,6 +82,8 @@ func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	err := decodeCookie(r, w)
 	if err == nil {
 		w.WriteHeader(200)
@@ -88,6 +93,8 @@ func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8080")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	http.SetCookie(
 		w,
 		&http.Cookie{
@@ -116,6 +123,8 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
 		Path:    "/",
 	}
 	http.SetCookie(w, &cookie)
+	cc := r.Cookies()
+	fmt.Println(cc)
 
 	return nil
 }

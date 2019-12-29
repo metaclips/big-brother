@@ -28,7 +28,7 @@ func main() {
 	router := httprouter.New()
 
 	router.POST("/signin", controller.SignIn)
-	router.POST("/islogged", controller.IsLogged)
+	router.GET("/islogged", controller.IsLogged)
 
 	router.GET("/query", controller.QuerySwitches)
 	router.GET("/all", controller.QueryLogs)

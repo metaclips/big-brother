@@ -89,9 +89,7 @@ export default {
             password: this.password
           }),
           {
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded"
-            }
+            withCredentials: true
           }
         )
         .then(
@@ -117,15 +115,19 @@ export default {
   },
 
   mounted() {
-    axios.post("http://127.0.0.1:3000/islogged").then(response => {
-      // eslint-disable-next-line no-console
-      console.log("Trying to check log in");
-      if (response.status == 200) {
+    axios
+      .get("http://127.0.0.1:3000/islogged", {
+        withCredentials: true
+      })
+      .then(response => {
         // eslint-disable-next-line no-console
-        console.log("Trying log in");
-        this.$router.push("/");
-      }
-    });
+        console.log("Trying to check log in");
+        if (response.status == 200) {
+          // eslint-disable-next-line no-console
+          console.log("Trying log in");
+          this.$router.push("/");
+        }
+      });
   }
 };
 </script>

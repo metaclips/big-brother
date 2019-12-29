@@ -15,21 +15,25 @@ export default {
   mounted() {
     // eslint-disable-next-line no-console
     console.log("Hello");
-    axios.get("http://127.0.0.1:3000/query").then(
-      response => {
-        this.queryData = response.data;
-      },
+    axios
+      .get("http://127.0.0.1:3000/query", {
+        withCredentials: true
+      })
+      .then(
+        response => {
+          this.queryData = response.data;
+        },
 
-      error => {
-        if (error.response.status == 425) {
-          // eslint-disable-next-line no-console
-          console.log("error so signed out");
-          axios
-            .get("http://127.0.0.1:3000/logout")
-            .then(this.$router.push("/signin"));
+        error => {
+          if (error.response.status == 425) {
+            // eslint-disable-next-line no-console
+            console.log("error so signed out");
+            axios
+              .get("http://127.0.0.1:3000/logout")
+              .then(this.$router.push("/signin"));
+          }
         }
-      }
-    );
+      );
   }
 };
 </script>
