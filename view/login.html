@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+
+<body>
+    <div id="app">
+        <v-app>
+            <v-content>
+                <v-container>
+                    <v-form v-model="form" method="POST" id="nativeForm" action="https://127.0.0.1:8080/signin">
+                        <v-row justify="center">
+                            <v-col cols="4">
+                                <v-text-field v-model="name" :rules="nameRules" id="username" placeholder="Username"
+                                    required></v-text-field>
+
+                                <v-text-field v-model="password" placeholder="Password"
+                                    :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                                    :rules="[rules.required, rules.min]" :type="show1 ? 'text' : 'password'"
+                                    id="password" counter @click:append="show1 = !show1"></v-text-field>
+
+                                <v-alert v-if="wrongDetails" dense outlined type="error">
+                                    <strong>Invalid login credential, please try again.</strong>
+                                </v-alert>
+                                <v-alert v-if="internalError" dense outlined type="error">
+                                    <strong>Internal error</strong>
+                                </v-alert>
+                                <v-alert v-if="noInput" dense outlined type="warning">
+                                    <strong>No Input To Text Field </strong>
+                                </v-alert>
+
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-spacer></v-spacer>
+                            <v-btn outlined v-on:click="Submit" :disabled="buttonDisabled">Sign In</v-btn>
+                            <v-spacer></v-spacer>
+                        </v-row>
+                    </v-form>
+                </v-container>
+            </v-content>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+
+            data: () => ({
+                nativeForm: null,
+
+                wrongDetails: false,
+                internalError: false,
+                buttonDisabled: false,
+                noInput: false,
+                form: true,
+
+                name: "",
+                nameRules: [v => !!v || "Name is required"],
+                password: "",
+                show1: false,
+                rules: {
+                    required: value => !!value || "Required.",
+                }
+            }),
+            methods: {
+                Submit() {
+                    if (this.name === "" || this.password === "") {
+                        this.noInput = true
+                        return
+                    }
+
+                    this.buttonDisabled = true
+                    nativeForm.submit()
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
