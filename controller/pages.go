@@ -3,27 +3,40 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/metaclips/big-brother/model"
-
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/metaclips/big-brother/model"
 )
 
 const (
 	key    = "Hello there Unilag"
-	host   = "https://7c71637e.ngrok.io"
 	expire = 30
 )
 
+func signPageError(err string, w http.ResponseWriter) {
+	data := map[string]interface{}{
+		"Error": err,
+	}
+
+	tmpl, terr := template.New("login.html").Delims("(%", "%)").ParseFiles("templates/login.html", "templates/logo.html")
+	if terr != nil {
+		log.Println("Error at refund.html", terr)
+		return
+	}
+	if terr = tmpl.Execute(w, data); terr != nil {
+		log.Println(terr)
+	}
+}
+
 func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var data []model.DownTimeLogger
-	w.Header().Set("Access-Control-Allow-Origin", host)
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	fmt.Println(model.Db.Find("Date", time.Now().Format("2006-01-02"), &data))
 
 	jsonData, err := json.MarshalIndent(data, "", "\t")
@@ -31,12 +44,10 @@ func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		log.Fatalln(err)
 	}
 
-	fmt.Println(w.Write(jsonData))
+	w.Write(jsonData)
 }
 
 func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", host)
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	err := decodeCookie(r, w)
 	if err != nil {
 		w.WriteHeader(425)
@@ -52,56 +63,87 @@ func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	w.Write(data)
 }
 
+func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := decodeCookie(r, w)
+	if err != nil {
+		http.Redirect(w, r, "/signin", 302)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Servers": servers,
+	}
+
+	var serverData []model.DownTimeLogger
+	err = model.Db.Find("Date", time.Now().Format("2006-01-02"), &serverData)
+	if err == nil {
+		data["Logs"] = serverData
+	}
+
+	tmpl, terr := template.New("home.html").Delims("(%", "%)").ParseFiles("templates/home.html", "templates/logo.html")
+	if terr != nil {
+		log.Println("Error at refund.html", terr)
+		return
+	}
+
+	if terr = tmpl.Execute(w, data); terr != nil {
+		log.Println(terr)
+	}
+}
+
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", host)
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	tmpl, terr := template.New("login.html").Delims("(%", "%)").ParseFiles("templates/login.html", "templates/logo.html")
+	if terr != nil {
+		log.Println("Error at refund.html", terr)
+		return
+	}
+
+	if terr = tmpl.Execute(w, nil); terr != nil {
+		log.Println(terr)
+	}
+}
+
+func SignInPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := decodeCookie(r, w)
+	if err == nil {
+		http.Redirect(w, r, "/", 302)
+		return
+	}
+
 	r.ParseForm()
 
 	username := r.FormValue("username")
 	pass := r.FormValue("password")
 
 	var user model.User
-	err := model.Db.One("Name", username, &user)
+	err = model.Db.One("Name", username, &user)
 	if err != nil {
-		w.WriteHeader(422)
+		signPageError("Wrong sign in credentials", w)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(pass)); err != nil {
-		w.WriteHeader(422)
+		signPageError("Wrong sign in credentials", w)
 		return
 	}
 
 	err = createCookie(username, w, r)
 	if err != nil {
-		w.WriteHeader(425)
+		http.Redirect(w, r, "/signin", 301)
 		return
 	}
 
-	w.WriteHeader(200)
-}
-
-func IsLogged(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", host)
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	err := decodeCookie(r, w)
-	if err == nil {
-		w.WriteHeader(200)
-	} else {
-		w.WriteHeader(425)
-	}
+	http.Redirect(w, r, "/", 302)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", host)
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	http.SetCookie(
 		w,
 		&http.Cookie{
 			Value:   "token",
 			Expires: time.Now(), MaxAge: -1})
 
-	w.WriteHeader(301)
+	http.Redirect(w, r, "/signin", 301)
 }
 
 func createCookie(email string, w http.ResponseWriter, r *http.Request) error {

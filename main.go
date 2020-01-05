@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rs/cors"
-
 	"github.com/metaclips/big-brother/controller"
 
 	"github.com/julienschmidt/httprouter"
@@ -27,14 +25,14 @@ func main() {
 
 	router := httprouter.New()
 
-	router.POST("/signin", controller.SignIn)
-	router.GET("/islogged", controller.IsLogged)
+	router.POST("/signin", controller.SignInPost)
+	router.GET("/signin", controller.SignIn)
+	//	router.GET("/islogged", controller.IsLogged)
 
-	router.GET("/query", controller.QuerySwitches)
-	router.GET("/all", controller.QueryLogs)
+	router.GET("/", controller.HomePage)
+	//	router.GET("/all", controller.QueryLogs)
 	router.GET("/logout", controller.Logout)
+	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
-	handler := cors.Default().Handler(router)
-
-	http.ListenAndServe(":3000", handler)
+	http.ListenAndServe(":8080", router)
 }
