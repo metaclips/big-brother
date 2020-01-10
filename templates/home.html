@@ -18,7 +18,7 @@
                         <ul>
                             (%range $key, $value := .Servers%)
                             <li>
-                                (%if $value.Up%)
+                                (%if $value%)
                                 <p> (%$key%) - Server Up</p>
                                 (%else%)
                                 <p>(%$key%) - Server Down</p>
@@ -29,6 +29,35 @@
                         <h2 class="text-center">
                             <u>Server Logs</u>
                         </h2>
+                        <v-expansion-panels accordion>
+                            (% range .Logs %)
+                            <v-expansion-panel>
+                                <v-expansion-panel-header>(% .Date %)</v-expansion-panel-header>
+                                <v-expansion-panel-content>
+                                    <v-simple-table>
+                                        <template v-slot:default>
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-left">Last time up</th>
+                                                    <th class="text-left">Last time down</th>
+                                                    <th class="text-left">Servers</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                (% range $key,$value:= .NetworkInfo %)
+                                                <tr>
+                                                    <td>(%$value.LastTimeUp%)</td>
+                                                    <td>(%$value.LastTimeDown%)</td>
+                                                    <td>(%$value.MacAddress%)</td>
+                                                </tr>
+                                                (%end%)
+                                            </tbody>
+                                        </template>
+                                    </v-simple-table>
+                                </v-expansion-panel-content>
+                            </v-expansion-panel>
+                            (%end%)
+                        </v-expansion-panels>
                     </v-col>
                 </v-container>
             </v-content>

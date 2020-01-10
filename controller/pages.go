@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -35,34 +33,6 @@ func signPageError(err string, w http.ResponseWriter) {
 	}
 }
 
-func QueryLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var data []model.DownTimeLogger
-	fmt.Println(model.Db.Find("Date", time.Now().Format("2006-01-02"), &data))
-
-	jsonData, err := json.MarshalIndent(data, "", "\t")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	w.Write(jsonData)
-}
-
-func QuerySwitches(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	err := decodeCookie(r, w)
-	if err != nil {
-		w.WriteHeader(425)
-		return
-	}
-
-	data, err := json.MarshalIndent(servers, "", "\t")
-	if err != nil {
-		w.Write([]byte(fmt.Sprintf("server error: %s", err.Error())))
-		return
-	}
-
-	w.Write(data)
-}
-
 func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	err := decodeCookie(r, w)
 	if err != nil {
@@ -71,11 +41,11 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	data := map[string]interface{}{
-		"Servers": servers,
+		"Servers": serversInfo,
 	}
 
 	var serverData []model.DownTimeLogger
-	err = model.Db.Find("Date", time.Now().Format("2006-01-02"), &serverData)
+	log.Println(model.Db.All(&serverData))
 	if err == nil {
 		data["Logs"] = serverData
 	}
@@ -167,8 +137,6 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
 		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)
-	cc := r.Cookies()
-	fmt.Println(cc)
 
 	return nil
 }

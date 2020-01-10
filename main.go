@@ -27,10 +27,8 @@ func main() {
 
 	router.POST("/signin", controller.SignInPost)
 	router.GET("/signin", controller.SignIn)
-	//	router.GET("/islogged", controller.IsLogged)
 
 	router.GET("/", controller.HomePage)
-	//	router.GET("/all", controller.QueryLogs)
 	router.GET("/logout", controller.Logout)
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 

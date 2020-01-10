@@ -3,22 +3,22 @@ package model
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/asdine/storm"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type NetworkInfo struct {
-	Up           bool
 	LastTimeUp   string
-	LastTimeDown string `storm:"index"`
+	LastTimeDown string
+	MacAddress   []string
 }
 
 type DownTimeLogger struct {
-	ID          int `storm:"increment"`
-	Date        string
-	MacAddress  []string
-	NetworkInfo `storm:"inline"`
+	ID          int           `storm:"increment"`
+	Date        string        `storm:"index"`
+	NetworkInfo []NetworkInfo `storm:"inline"`
 }
 
 type User struct {
@@ -59,6 +59,18 @@ func init() {
 	fmt.Println(rr)
 }
 
-func database() {
+func SaveToDatabase(networkInfo NetworkInfo) {
+	// check if any data for that day
+	Date := time.Now().Format("2006-01-02 Mon")
+	var logger DownTimeLogger
 
+	err := Db.One("Date", Date, &logger)
+	logger.Date = Date
+	logger.NetworkInfo = append(logger.NetworkInfo, networkInfo)
+
+	if err == nil {
+		Db.Update(&logger)
+	} else if err == storm.ErrNotFound {
+		Db.Save(&logger)
+	}
 }
