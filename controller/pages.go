@@ -111,7 +111,9 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w,
 		&http.Cookie{
 			Value:   "token",
-			Expires: time.Now(), MaxAge: -1})
+			Expires: time.Now(),
+			MaxAge:  -1,
+			Path:    "/"})
 
 	http.Redirect(w, r, "/signin", 301)
 }
