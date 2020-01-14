@@ -21,11 +21,9 @@
                                 <v-btn v-on="on">Control Panel</v-btn>
                             </template>
                             <v-tabs fixed-tabs light>
+                                (%if .Name=="Admin"%)
                                 <v-tab>
                                     Register New User
-                                </v-tab>
-                                <v-tab>
-                                    Change Password
                                 </v-tab>
 
                                 <v-tab-item>
@@ -69,6 +67,11 @@
                                         </v-card-text>
                                     </v-card>
                                 </v-tab-item>
+                                (%end%)
+
+                                <v-tab>
+                                    Change Password
+                                </v-tab>
 
                                 <v-tab-item>
                                     <v-card flat tile>
