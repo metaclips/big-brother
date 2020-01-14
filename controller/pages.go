@@ -61,6 +61,10 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
+func ChangePass() {
+
+}
+
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	tmpl, terr := template.New("login.html").Delims("(%", "%)").ParseFiles("templates/login.html", "templates/logo.html")
 	if terr != nil {
