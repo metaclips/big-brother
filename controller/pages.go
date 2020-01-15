@@ -16,6 +16,7 @@ import (
 const (
 	key    = "Hello there Unilag"
 	expire = 30
+	cost   = 15
 )
 
 func signPageError(err string, w http.ResponseWriter) {
@@ -34,7 +35,7 @@ func signPageError(err string, w http.ResponseWriter) {
 }
 
 func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	err := decodeCookie(r, w)
+	name, err := decodeCookie(r, w)
 	if err != nil {
 		http.Redirect(w, r, "/signin", 302)
 		return
@@ -42,6 +43,7 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	data := map[string]interface{}{
 		"Servers": serversInfo,
+		"Name":    name,
 	}
 
 	var serverData []model.DownTimeLogger
@@ -61,6 +63,43 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
+func ChangePass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	r.ParseForm()
+
+	oldPassword := r.FormValue("changedOldPassword")
+	newPassword := r.FormValue("changedPassword")
+
+	name, err := decodeCookie(r, w)
+	if err != nil {
+		http.Redirect(w, r, "/signin", 302)
+		return
+	}
+
+	var user model.User
+	err = model.Db.One("Name", name, &user)
+	if err != nil {
+		signPageError("Wrong sign in credentials", w)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(oldPassword)); err != nil {
+		// todo show wrong password
+		return
+	}
+	user.Password, err = bcrypt.GenerateFromPassword([]byte(newPassword), cost)
+	if err != nil {
+		// todo show could not store password
+		return
+	}
+
+	err = model.Db.Update(&user)
+	if err != nil {
+		// todo show could not store password
+		return
+	}
+	// todo show home page noting password has been changed
+}
+
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	tmpl, terr := template.New("login.html").Delims("(%", "%)").ParseFiles("templates/login.html", "templates/logo.html")
 	if terr != nil {
@@ -74,7 +113,7 @@ func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func SignInPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	err := decodeCookie(r, w)
+	_, err := decodeCookie(r, w)
 	if err == nil {
 		http.Redirect(w, r, "/", 302)
 		return
@@ -118,10 +157,10 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	http.Redirect(w, r, "/signin", 301)
 }
 
-func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
+func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
 	token := jwt.New(jwt.SigningMethodHS512)
 	claims := make(jwt.MapClaims)
-	claims["email"] = email
+	claims["name"] = name
 	claims["exp"] = time.Now().Add(time.Minute * 30)
 	token.Claims = claims
 
@@ -143,19 +182,24 @@ func createCookie(email string, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func decodeCookie(r *http.Request, w http.ResponseWriter) error {
+func decodeCookie(r *http.Request, w http.ResponseWriter) (string, error) {
 	//Get cookie
 	cookie, err := r.Cookie("token")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
 		return []byte(key), nil
 	})
 	if err == nil && token.Valid {
-		return nil
+		return "", nil
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims["name"].(string), nil
+	} else {
+		return "", err
 	}
 
-	return err
+	return "", err
 }
