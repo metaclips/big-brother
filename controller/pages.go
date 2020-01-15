@@ -16,6 +16,7 @@ import (
 const (
 	key    = "Hello there Unilag"
 	expire = 30
+	cost   = 15
 )
 
 func signPageError(err string, w http.ResponseWriter) {
@@ -63,7 +64,40 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func ChangePass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	r.ParseForm()
 
+	oldPassword := r.FormValue("changedOldPassword")
+	newPassword := r.FormValue("changedPassword")
+
+	name, err := decodeCookie(r, w)
+	if err != nil {
+		http.Redirect(w, r, "/signin", 302)
+		return
+	}
+
+	var user model.User
+	err = model.Db.One("Name", name, &user)
+	if err != nil {
+		signPageError("Wrong sign in credentials", w)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(oldPassword)); err != nil {
+		// todo show wrong password
+		return
+	}
+	user.Password, err = bcrypt.GenerateFromPassword([]byte(newPassword), cost)
+	if err != nil {
+		// todo show could not store password
+		return
+	}
+
+	err = model.Db.Update(&user)
+	if err != nil {
+		// todo show could not store password
+		return
+	}
+	// todo show home page noting password has been changed
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
