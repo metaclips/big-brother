@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -158,20 +159,29 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
-	token := jwt.New(jwt.SigningMethodHS512)
-	claims := make(jwt.MapClaims)
-	claims["name"] = name
-	claims["exp"] = time.Now().Add(time.Minute * 30)
-	token.Claims = claims
+	// token := jwt.New(jwt.SigningMethodHS512)
+	// claims := make(jwt.MapClaims)
+	// claims["name"] = name
+	// claims["exp"] = time.Now().Add(time.Minute * 30)
+	// token.Claims = claims
 
-	uniqueKey, err := token.SignedString([]byte(key))
+	// Create a new token object, specifying signing method and the claims
+	// you would like it to contain.
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"name": name,
+		"exp":  time.Now().Add(time.Minute * 30),
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(key))
+
 	if err != nil {
 		return err
 	}
 
 	cookie := http.Cookie{
 		Name:     "token",
-		Value:    uniqueKey,
+		Value:    tokenString,
 		HttpOnly: true,
 		SameSite: http.SameSiteDefaultMode,
 		Expires:  time.Now().Add(time.Minute * expire),
@@ -192,13 +202,11 @@ func decodeCookie(r *http.Request, w http.ResponseWriter) (string, error) {
 	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
 		return []byte(key), nil
 	})
-	if err == nil && token.Valid {
-		return "", nil
+	if err != nil || !token.Valid {
+		return "", errors.New("could not detect cookie validity")
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims["name"].(string), nil
-	} else {
-		return "", err
 	}
 
 	return "", err
