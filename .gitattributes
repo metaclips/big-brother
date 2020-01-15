@@ -1,1 +1,1 @@
-*.go -text diff=golang
+*.html -text diff=html
