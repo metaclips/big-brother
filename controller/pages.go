@@ -102,6 +102,12 @@ func ChangePass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	_, err := decodeCookie(r, w)
+	if err == nil {
+		http.Redirect(w, r, "/", 302)
+		return
+	}
+
 	tmpl, terr := template.New("login.html").Delims("(%", "%)").ParseFiles("templates/login.html", "templates/logo.html")
 	if terr != nil {
 		log.Println("Error at refund.html", terr)
@@ -147,26 +153,20 @@ func SignInPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	http.SetCookie(
-		w,
-		&http.Cookie{
-			Value:   "token",
-			Expires: time.Now(),
-			MaxAge:  -1,
-			Path:    "/"})
+	cookie := http.Cookie{
+		Name:     "token",
+		Value:    "",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Path:     "/",
+	}
+
+	http.SetCookie(w, &cookie)
 
 	http.Redirect(w, r, "/signin", 301)
 }
 
 func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
-	// token := jwt.New(jwt.SigningMethodHS512)
-	// claims := make(jwt.MapClaims)
-	// claims["name"] = name
-	// claims["exp"] = time.Now().Add(time.Minute * 30)
-	// token.Claims = claims
-
-	// Create a new token object, specifying signing method and the claims
-	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"name": name,
 		"exp":  time.Now().Add(time.Minute * 30),
@@ -184,7 +184,7 @@ func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
 		Value:    tokenString,
 		HttpOnly: true,
 		SameSite: http.SameSiteDefaultMode,
-		Expires:  time.Now().Add(time.Minute * expire),
+		MaxAge:   time.Now().Add(time.Minute * expire).Second(),
 		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)
@@ -193,7 +193,6 @@ func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
 }
 
 func decodeCookie(r *http.Request, w http.ResponseWriter) (string, error) {
-	//Get cookie
 	cookie, err := r.Cookie("token")
 	if err != nil {
 		return "", err

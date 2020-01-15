@@ -29,7 +29,7 @@ func main() {
 	router.GET("/signin", controller.SignIn)
 
 	router.GET("/", controller.HomePage)
-	router.GET("/logout", controller.Logout)
+	router.POST("/logout", controller.Logout)
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
 	http.ListenAndServe(":8080", router)
