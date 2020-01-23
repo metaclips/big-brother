@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -99,14 +98,6 @@ func MonitorSwitches() {
 		}
 	}
 	serversInfo = iServer
-}
-
-func blockingAlarm() {
-	fmt.Println("Call to on alarm made")
-	syncWg.Wait()
-	fmt.Println("Call to off alarm made")
-	alarmOn = false
-	fmt.Println("done")
 }
 
 func isInArray(str string, array []string) (bool, int) {

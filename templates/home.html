@@ -12,167 +12,164 @@
     <div id="app">
         <v-app>
             <v-content>
+                (%template "logo.html"%)
                 <v-container>
-                    (%template "logo.html"%)
-                    <v-row>
-                        <v-spacer></v-spacer>
-                        <v-col cols="12">
-                            <v-form method="POST" action="/logout">
-                                <v-btn type="submit">Log out</v-btn>
-                            </v-form>
-                        </v-col>
-                        <v-col cols="12">
-                            <v-dialog v-model="dialog" width="600px">
-                                <template v-slot:activator="{ on }">
-                                    <v-btn v-on="on">Control Panel</v-btn>
-                                </template>
-                                <v-tabs fixed-tabs light>
-                                    (%if eq .Name "admin"%)
-                                    <v-tab>
-                                        Register New User
-                                    </v-tab>
 
-                                    <v-tab-item>
-                                        <v-card flat tile>
-                                            <v-card-title>
-                                                <span class="headline">Register New User</span>
-                                            </v-card-title>
-                                            <v-card-text>
-                                                <v-container>
-                                                    <v-form method="POST" action="/register">
-                                                        <v-row>
-                                                            <v-col cols="12">
-                                                                <v-text-field label="Username*" required></v-text-field>
+                    <v-layout align-end justify-space-between>
 
-                                                                <v-text-field v-model="regPassword" label="Password*"
-                                                                    :append-icon="showRegPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
-                                                                    :type="showRegPassIcon ? 'text' : 'password'"
-                                                                    name="regPassword" counter
-                                                                    @click:append="showRegPassIcon = !showRegPassIcon"
-                                                                    required>
-                                                                </v-text-field>
+                        <v-dialog v-model="dialog" width="600px">
+                            <template v-slot:activator="{ on }">
+                                <v-btn v-on="on">Control Panel</v-btn>
+                            </template>
+                            <v-tabs fixed-tabs light>
+                                (%if eq .Name "admin"%)
+                                <v-tab>
+                                    Register New User
+                                </v-tab>
 
-                                                                <v-text-field v-model="regConfirmPassword"
-                                                                    label="Confirm Password*"
-                                                                    :append-icon="showRegConfPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
-                                                                    :type="showRegConfPassIconIcon ? 'text' : 'password'"
-                                                                    name="regConfirmPassword" counter
-                                                                    @click:append="showRegConfPassIcon = !showRegConfPassIcon"
-                                                                    :rules="[rules.required, regPasswordConfirmationRule]">
-                                                                </v-text-field>
-                                                                <v-spacer></v-spacer>
-                                                                <v-row>
-                                                                    <v-spacer></v-spacer>
-                                                                    <v-btn type="Submit">Submit</v-btn>
-                                                                    <v-spacer></v-spacer>
-                                                                </v-row>
-                                                            </v-col>
-                                                        </v-row>
-                                                    </v-form>
-                                                </v-container>
-                                            </v-card-text>
-                                        </v-card>
-                                    </v-tab-item>
-                                    (%end%)
-
-                                    <v-tab>
-                                        Change Password
-                                    </v-tab>
-
-                                    <v-tab-item>
-                                        <v-card flat tile>
-                                            <v-card-title>
-                                                <span class="headline">Change Your Password</span>
-                                            </v-card-title>
-                                            <v-card-text>
-                                                <v-container>
+                                <v-tab-item>
+                                    <v-card flat tile>
+                                        <v-card-title>
+                                            <span class="headline">Register New User</span>
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-container>
+                                                <v-form method="POST" action="/register">
                                                     <v-row>
                                                         <v-col cols="12">
-                                                            <v-form method="POST" action="/changepass">
-                                                                <v-text-field v-model="changedOldPassword"
-                                                                    label="Old Password*"
-                                                                    :append-icon="showChangeOldPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
-                                                                    :type="showChangeOldPassIcon ? 'text' : 'password'"
-                                                                    name="changedOldPassword" counter
-                                                                    @click:append="showChangeOldPassIcon = !showChangeOldPassIcon"
-                                                                    required>
-                                                                </v-text-field>
+                                                            <v-text-field label="Username*" required>
+                                                            </v-text-field>
 
-                                                                <v-text-field v-model="changedPassword"
-                                                                    label="Password*"
-                                                                    :append-icon="showChangePassIcon ? 'mdi-eye' : 'mdi-eye-off'"
-                                                                    :type="showChangePassIcon ? 'text' : 'password'"
-                                                                    name="changedPassword" counter
-                                                                    @click:append="showChangePassIcon = !showChangePassIcon"
-                                                                    required>
-                                                                </v-text-field>
-                                                                <v-text-field v-model="changedNewConfirmPassword"
-                                                                    label="Confirm Password*"
-                                                                    :append-icon="showChangeConfPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
-                                                                    :type="showChangeConfPassIcon ? 'text' : 'password'"
-                                                                    name="changedNewConfirmPassword" counter
-                                                                    @click:append="showChangeConfPassIcon = !showChangeConfPassIcon"
-                                                                    :rules="[rules.required, regChangePasswordConfirmationRule]">
-                                                                </v-text-field>
-                                                            </v-form>
+                                                            <v-text-field v-model="regPassword" label="Password*"
+                                                                :append-icon="showRegPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
+                                                                :type="showRegPassIcon ? 'text' : 'password'"
+                                                                name="regPassword" counter
+                                                                @click:append="showRegPassIcon = !showRegPassIcon"
+                                                                required>
+                                                            </v-text-field>
+
+                                                            <v-text-field v-model="regConfirmPassword"
+                                                                label="Confirm Password*"
+                                                                :append-icon="showRegConfPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
+                                                                :type="showRegConfPassIconIcon ? 'text' : 'password'"
+                                                                name="regConfirmPassword" counter
+                                                                @click:append="showRegConfPassIcon = !showRegConfPassIcon"
+                                                                :rules="[rules.required, regPasswordConfirmationRule]">
+                                                            </v-text-field>
+                                                            <!-- <v-spacer></v-spacer> -->
+                                                            <v-row>
+                                                                <!-- <v-spacer></v-spacer> -->
+                                                                <v-btn type="Submit">Submit</v-btn>
+                                                                <!-- <v-spacer></v-spacer> -->
+                                                            </v-row>
                                                         </v-col>
                                                     </v-row>
-                                                </v-container>
-                                            </v-card-text>
-                                        </v-card>
-                                    </v-tab-item>
-
-                                </v-tabs>
-                            </v-dialog>
-                        </v-col>
-                    </v-row>
-
-
-                    <v-col>
-                        <ul>
-                            (%range $key, $value := .Servers%)
-                            <li>
-                                (%if $value%)
-                                <p> (%$key%) - Server Up</p>
-                                (%else%)
-                                <p>(%$key%) - Server Down</p>
+                                                </v-form>
+                                            </v-container>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-tab-item>
                                 (%end%)
-                            </li>
+
+                                <v-tab>
+                                    Change Password
+                                </v-tab>
+
+                                <v-tab-item>
+                                    <v-card flat tile>
+                                        <v-card-title>
+                                            <span class="headline">Change Your Password</span>
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-container>
+                                                <v-row>
+                                                    <v-col cols="12">
+                                                        <v-form method="POST" action="/changepass">
+                                                            <v-text-field v-model="changedOldPassword"
+                                                                label="Old Password*"
+                                                                :append-icon="showChangeOldPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
+                                                                :type="showChangeOldPassIcon ? 'text' : 'password'"
+                                                                name="changedOldPassword" counter
+                                                                @click:append="showChangeOldPassIcon = !showChangeOldPassIcon"
+                                                                required>
+                                                            </v-text-field>
+
+                                                            <v-text-field v-model="changedPassword" label="Password*"
+                                                                :append-icon="showChangePassIcon ? 'mdi-eye' : 'mdi-eye-off'"
+                                                                :type="showChangePassIcon ? 'text' : 'password'"
+                                                                name="changedPassword" counter
+                                                                @click:append="showChangePassIcon = !showChangePassIcon"
+                                                                required>
+                                                            </v-text-field>
+                                                            <v-text-field v-model="changedNewConfirmPassword"
+                                                                label="Confirm Password*"
+                                                                :append-icon="showChangeConfPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
+                                                                :type="showChangeConfPassIcon ? 'text' : 'password'"
+                                                                name="changedNewConfirmPassword" counter
+                                                                @click:append="showChangeConfPassIcon = !showChangeConfPassIcon"
+                                                                :rules="[rules.required, regChangePasswordConfirmationRule]">
+                                                            </v-text-field>
+                                                        </v-form>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-container>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-tab-item>
+                            </v-tabs>
+                        </v-dialog>
+
+
+
+                        <v-form method="POST" action="/logout">
+                            <v-btn type="submit">Log out</v-btn>
+                        </v-form>
+                    </v-layout>
+
+                    <v-col md="6"></v-col>
+                    <ul>
+                        (%range $key, $value := .Servers%)
+                        <li>
+                            (%if $value%)
+                            <p> (%$key%) - Server Up</p>
+                            (%else%)
+                            <p>(%$key%) - Server Down</p>
                             (%end%)
-                        </ul>
-                        <h2 class="text-center">
-                            <u>Server Logs</u>
-                        </h2>
-                        <v-expansion-panels accordion>
-                            (% range .Logs %)
-                            <v-expansion-panel>
-                                <v-expansion-panel-header>(% .Date %)</v-expansion-panel-header>
-                                <v-expansion-panel-content>
-                                    <v-simple-table>
-                                        <template v-slot:default>
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-left">Last time up</th>
-                                                    <th class="text-left">Last time down</th>
-                                                    <th class="text-left">Servers</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                (% range $key,$value:= .NetworkInfo %)
-                                                <tr>
-                                                    <td>(%$value.LastTimeUp%)</td>
-                                                    <td>(%$value.LastTimeDown%)</td>
-                                                    <td>(%$value.MacAddress%)</td>
-                                                </tr>
-                                                (%end%)
-                                            </tbody>
-                                        </template>
-                                    </v-simple-table>
-                                </v-expansion-panel-content>
-                            </v-expansion-panel>
-                            (%end%)
-                        </v-expansion-panels>
-                    </v-col>
+                        </li>
+                        (%end%)
+                    </ul>
+                    <h2 class="text-center">
+                        <u>Server Logs</u>
+                    </h2>
+                    <v-expansion-panels accordion>
+                        (% range .Logs %)
+                        <v-expansion-panel>
+                            <v-expansion-panel-header>(% .Date %)</v-expansion-panel-header>
+                            <v-expansion-panel-content>
+                                <v-simple-table>
+                                    <template v-slot:default>
+                                        <thead>
+                                            <tr>
+                                                <th class="text-left">Last time up</th>
+                                                <th class="text-left">Last time down</th>
+                                                <th class="text-left">Servers</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            (% range $key,$value:= .NetworkInfo %)
+                                            <tr>
+                                                <td>(%$value.LastTimeUp%)</td>
+                                                <td>(%$value.LastTimeDown%)</td>
+                                                <td>(%$value.MacAddress%)</td>
+                                            </tr>
+                                            (%end%)
+                                        </tbody>
+                                    </template>
+                                </v-simple-table>
+                            </v-expansion-panel-content>
+                        </v-expansion-panel>
+                        (%end%)
+                    </v-expansion-panels>
                 </v-container>
             </v-content>
         </v-app>
