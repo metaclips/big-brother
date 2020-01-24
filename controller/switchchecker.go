@@ -23,9 +23,8 @@ var alarmOn bool
 
 var serversInfo = make(map[string]bool)
 var downServers downServerStruct
-var syncWg sync.WaitGroup
 
-func monitor() {
+func MonitorSwitches() {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return
