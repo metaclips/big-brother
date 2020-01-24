@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -29,6 +30,7 @@ func MonitorSwitches() {
 	if err != nil {
 		return
 	}
+	var iServer = make(map[string]bool)
 
 	for _, iface := range ifaces {
 		// use a sync go routine here to check all interface at once
@@ -69,22 +71,26 @@ func MonitorSwitches() {
 
 			d := net.Dialer{
 				LocalAddr: tcpAddr,
-				Timeout:   15 * time.Second,
+				Timeout:   5 * time.Second,
 			}
 
 			// This basically checks if the network is up
 			_, err := d.Dial("tcp", "google.com:80")
 
 			if err != nil { // server is down
+				iServer[iface.HardwareAddr.String()] = false
+
 				exists, _ := isInArray(iface.HardwareAddr.String(), downServers.server)
 
 				if exists { // if it exists, it's already in goroutine
+					// todo: find a way to exit if unplugged here
 					continue
 				}
 
 				downServer := serverInfo{
-					macAddress: iface.HardwareAddr.String(),
-					lastTimeUp: time.Now().Format("2006-01-02 3:4 AM")}
+					macAddress:   iface.HardwareAddr.String(),
+					lastTimeDown: time.Now().Format("2006-01-02 3:4 AM"),
+					lastTimeUp:   time.Now().Format("2006-01-02 3:4 AM")}
 
 				// add to down servers
 				downServers.server = append(downServers.server, downServer)
@@ -95,17 +101,29 @@ func MonitorSwitches() {
 					downServers.server[len(downServers.server)-1] = serverInfo{}                        // Erase last element (write zero value).
 					downServers.server = downServers.server[:len(downServers.server)-1]                 // Truncate slice.
 				}
-				go func() {
+				go func(iface net.Interface) {
 					downServers.mux.Lock()
 
 					for _, err := d.Dial("tcp", "google.com:80"); err != nil; {
+						fmt.Println(err)
+						// check if in downserver
+						exists, up := isInServer(iface.HardwareAddr.String())
+						if !exists {
+							fmt.Println("Router removed")
+							removeAddress()
+							downServers.mux.Unlock()
+							return
+						} else if up {
+							fmt.Println("It's up so I removed")
+							break
+						}
 						time.Sleep(5 * time.Second)
 					}
 
 					// if network is up
 					networkInfo := model.NetworkInfo{
-						LastTimeUp:   downServer.lastTimeDown,
-						LastTimeDown: time.Now().Format("2006-01-02 3:4 AM"),
+						LastTimeUp:   time.Now().Format("2006-01-02 3:4 AM"),
+						LastTimeDown: downServer.lastTimeUp,
 						MacAddress:   []string{downServer.macAddress},
 					}
 
@@ -120,8 +138,8 @@ func MonitorSwitches() {
 					}
 
 					pos := len(networkLogger.NetworkInfo) - 1
-					if networkLogger.NetworkInfo[pos].LastTimeUp == networkInfo.LastTimeUp {
-						networkLogger.NetworkInfo[pos].LastTimeDown = networkInfo.LastTimeDown
+					if networkLogger.NetworkInfo[pos].LastTimeUp == networkInfo.LastTimeUp &&
+						networkLogger.NetworkInfo[pos].LastTimeDown == networkInfo.LastTimeDown {
 						networkLogger.NetworkInfo[pos].MacAddress = append(networkLogger.NetworkInfo[pos].MacAddress, downServer.macAddress)
 						model.Db.Update(networkLogger)
 					} else {
@@ -130,10 +148,15 @@ func MonitorSwitches() {
 
 					removeAddress()
 					downServers.mux.Unlock()
-				}()
+				}(iface)
+
+				continue
 			}
+			iServer[iface.HardwareAddr.String()] = true
+
 		}
 	}
+	serversInfo = iServer
 }
 
 // func MonitorSwitches() {
@@ -230,4 +253,13 @@ func isInArray(str string, array []serverInfo) (bool, int) {
 	}
 
 	return false, 0
+}
+
+func isInServer(str string) (bool, bool) {
+	for value, up := range serversInfo {
+		if value == str {
+			return true, up
+		}
+	}
+	return false, false
 }

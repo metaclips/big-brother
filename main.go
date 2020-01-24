@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/metaclips/big-brother/controller"
-
 	"github.com/julienschmidt/httprouter"
+
+	"github.com/metaclips/big-brother/controller"
+	"github.com/metaclips/big-brother/model"
 )
 
 // todo: get switch name.
@@ -15,6 +16,7 @@ import (
 // todo: get a logger that stores uptime and downtime logs
 
 func main() {
+	defer model.Db.Close()
 	ticker := time.NewTicker(3 * time.Second)
 	go func() {
 		for {
@@ -34,5 +36,5 @@ func main() {
 
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(":80", router)
 }
