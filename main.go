@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -36,5 +37,5 @@ func main() {
 
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
-	http.ListenAndServe(":80", router)
+	fmt.Println(http.ListenAndServe(":80", router))
 }
