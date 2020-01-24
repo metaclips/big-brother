@@ -37,5 +37,5 @@ func main() {
 
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
-	fmt.Println(http.ListenAndServe(":80", router))
+	fmt.Println(http.ListenAndServe(":8080", router))
 }
