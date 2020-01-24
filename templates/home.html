@@ -12,8 +12,16 @@
     <div id="app">
         <v-app>
             <v-content>
-                (%template "logo.html"%)
+                (%template "logo"%)
+
                 <v-container>
+
+                    (%if .Alert%)
+                    <v-col md="6"></v-col>
+                    <v-alert outlined type=(%.AlertType%)>
+                        (%.AlertMessage%)
+                    </v-alert>
+                    (%end%)
 
                     <v-layout align-end justify-space-between>
 
@@ -34,10 +42,10 @@
                                         </v-card-title>
                                         <v-card-text>
                                             <v-container>
-                                                <v-form method="POST" action="/register">
+                                                <v-form method="POST" action="/">
                                                     <v-row>
                                                         <v-col cols="12">
-                                                            <v-text-field label="Username*" required>
+                                                            <v-text-field label="Username*" name="username" required>
                                                             </v-text-field>
 
                                                             <v-text-field v-model="regPassword" label="Password*"
@@ -45,6 +53,7 @@
                                                                 :type="showRegPassIcon ? 'text' : 'password'"
                                                                 name="regPassword" counter
                                                                 @click:append="showRegPassIcon = !showRegPassIcon"
+                                                                :rules="[rules.required, regPasswordConfirmationRule]"
                                                                 required>
                                                             </v-text-field>
 
@@ -56,12 +65,11 @@
                                                                 @click:append="showRegConfPassIcon = !showRegConfPassIcon"
                                                                 :rules="[rules.required, regPasswordConfirmationRule]">
                                                             </v-text-field>
-                                                            <!-- <v-spacer></v-spacer> -->
-                                                            <v-row>
-                                                                <!-- <v-spacer></v-spacer> -->
+
+                                                            <v-layout justify-center>
                                                                 <v-btn type="Submit">Submit</v-btn>
-                                                                <!-- <v-spacer></v-spacer> -->
-                                                            </v-row>
+                                                            </v-layout>
+
                                                         </v-col>
                                                     </v-row>
                                                 </v-form>
@@ -84,7 +92,7 @@
                                             <v-container>
                                                 <v-row>
                                                     <v-col cols="12">
-                                                        <v-form method="POST" action="/changepass">
+                                                        <v-form method="POST" action="/">
                                                             <v-text-field v-model="changedOldPassword"
                                                                 label="Old Password*"
                                                                 :append-icon="showChangeOldPassIcon ? 'mdi-eye' : 'mdi-eye-off'"
@@ -109,6 +117,9 @@
                                                                 @click:append="showChangeConfPassIcon = !showChangeConfPassIcon"
                                                                 :rules="[rules.required, regChangePasswordConfirmationRule]">
                                                             </v-text-field>
+                                                            <v-layout justify-center>
+                                                                <v-btn type="Submit">Submit</v-btn>
+                                                            </v-layout>
                                                         </v-form>
                                                     </v-col>
                                                 </v-row>
@@ -118,8 +129,6 @@
                                 </v-tab-item>
                             </v-tabs>
                         </v-dialog>
-
-
 
                         <v-form method="POST" action="/logout">
                             <v-btn type="submit">Log out</v-btn>
@@ -205,8 +214,17 @@
 
             },
             computed: {
+
                 regPasswordConfirmationRule() {
-                    return () => (this.regPassword === this.regConfirmPassword) || 'Password must match'
+                    if (this.regConfirmPassword === "") {
+                        return true;
+                    }
+
+                    if (this.regPassword === this.regConfirmPassword) {
+                        return true;
+                    } else {
+                        return 'Password must match';
+                    }
                 },
                 regChangePasswordConfirmationRule() {
                     return () => (this.changedPassword === this.changedNewConfirmPassword) || 'Password must match'

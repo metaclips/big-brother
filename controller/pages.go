@@ -35,6 +35,37 @@ func signPageError(err string, w http.ResponseWriter) {
 	}
 }
 
+func homePageWithAlert(alertType string, alertMessage string, r *http.Request, w http.ResponseWriter) {
+	name, err := decodeCookie(r, w)
+	if err != nil {
+		http.Redirect(w, r, "/signin", 302)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Alert":        true,
+		"AlertType":    alertType,
+		"AlertMessage": alertMessage,
+		"Servers":      serversInfo,
+		"Name":         name,
+	}
+
+	var serverData []model.DownTimeLogger
+	log.Println(model.Db.All(&serverData))
+	if err == nil {
+		data["Logs"] = serverData
+	}
+
+	tmpl, terr := template.New("home.html").Delims("(%", "%)").ParseFiles("templates/home.html", "templates/logo.html")
+	if terr != nil {
+		log.Println("Error at home page alert page", terr)
+		return
+	}
+	if terr = tmpl.Execute(w, data); terr != nil {
+		log.Println(terr)
+	}
+}
+
 func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	name, err := decodeCookie(r, w)
 	if err != nil {
@@ -64,10 +95,49 @@ func HomePage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
-func ChangePass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func HomePost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	r.ParseForm()
 
 	oldPassword := r.FormValue("changedOldPassword")
+	username := r.FormValue("username")
+
+	if oldPassword != "" {
+		changePass(oldPassword, w, r)
+	} else if username != "" {
+		registerUser(username, w, r)
+	} else {
+		homePageWithAlert("error", "Form not correctly filled", r, w)
+		return
+	}
+}
+
+func registerUser(username string, w http.ResponseWriter, r *http.Request) {
+	password := r.FormValue("regPassword")
+	if err := model.Db.One("Name", username, &model.User{}); err == nil {
+		homePageWithAlert("error", "Username already taken.", r, w)
+		return
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), cost)
+	if err != nil {
+		homePageWithAlert("error", "Unable to hash password.", r, w) //ToDo show we show errors like this?
+		return
+	}
+
+	var user model.User
+	user.Name = username
+	user.Password = hashedPassword
+
+	err = model.Db.Save(&user)
+	if err != nil {
+		homePageWithAlert("error", "Could not save user to database", r, w) //ToDo show we show errors like this?
+		return
+	}
+
+	homePageWithAlert("success", "Registered new user", r, w)
+}
+
+func changePass(oldPassword string, w http.ResponseWriter, r *http.Request) {
+
 	newPassword := r.FormValue("changedPassword")
 
 	name, err := decodeCookie(r, w)
@@ -84,21 +154,24 @@ func ChangePass(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(oldPassword)); err != nil {
-		// todo show wrong password
+		homePageWithAlert("error", "Password is not recognized.", r, w)
 		return
 	}
 	user.Password, err = bcrypt.GenerateFromPassword([]byte(newPassword), cost)
 	if err != nil {
-		// todo show could not store password
+		homePageWithAlert("error", "Password could not be saved", r, w)
+		log.Println("Hash password.", err)
 		return
 	}
 
 	err = model.Db.Update(&user)
 	if err != nil {
-		// todo show could not store password
+		homePageWithAlert("error", "Password could not be saved", r, w)
+		log.Println("Could not save password to database.", err)
 		return
 	}
-	// todo show home page noting password has been changed
+
+	homePageWithAlert("success", "Password changed", r, w)
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -169,7 +242,7 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"name": name,
-		"exp":  time.Now().Add(time.Minute * 30),
+		"exp":  time.Now().Add(time.Minute * expire),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -184,7 +257,7 @@ func createCookie(name string, w http.ResponseWriter, r *http.Request) error {
 		Value:    tokenString,
 		HttpOnly: true,
 		SameSite: http.SameSiteDefaultMode,
-		MaxAge:   time.Now().Add(time.Minute * expire).Second(),
+		Expires:  time.Now().Add(time.Minute * expire),
 		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)

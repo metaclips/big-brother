@@ -25,11 +25,13 @@ func main() {
 
 	router := httprouter.New()
 
-	router.POST("/signin", controller.SignInPost)
 	router.GET("/signin", controller.SignIn)
-
 	router.GET("/", controller.HomePage)
+
 	router.POST("/logout", controller.Logout)
+	router.POST("/signin", controller.SignInPost)
+	router.POST("/", controller.HomePost)
+
 	router.ServeFiles("/assets/*filepath", http.Dir("./templates/assets"))
 
 	http.ListenAndServe(":8080", router)
